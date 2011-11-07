@@ -763,7 +763,7 @@ UV_EXTERN void uv_pipe_open(uv_pipe_t*, uv_file file);
 
 UV_EXTERN int uv_pipe_bind(uv_pipe_t* handle, const char* name);
 
-UV_EXTERN void uv_pipe_connect(uv_connect_t* req, uv_pipe_t* handle,
+UV_EXTERN int uv_pipe_connect(uv_connect_t* req, uv_pipe_t* handle,
     const char* name, uv_connect_cb cb);
 
 
@@ -1166,33 +1166,13 @@ struct uv_fs_event_s {
  */
 UV_EXTERN void uv_loadavg(double avg[3]);
 
-
 /*
- * Flags to be passed to uv_fs_event_init.
- */
-enum uv_fs_event_flags {
-  /*
-   * By default, if the fs event watcher is given a directory name, we will
-   * watch for all events in that directory. This flags overrides this behavior
-   * and makes fs_event report only changes to the directory entry itself. This
-   * flag does not affect individual files watched.
-   * This flag is currently not implemented yet on any backend.
-   */
- UV_FS_EVENT_WATCH_ENTRY = 1,
-
-  /*
-   * By default uv_fs_event will try to use a kernel interface such as inotify
-   * or kqueue to detect events. This may not work on remote filesystems such
-   * as NFS mounts. This flag makes fs_event fall back to calling stat() on a
-   * regular interval.
-   * This flag is currently not implemented yet on any backend.
-   */
-  UV_FS_EVENT_STAT = 2
-};
-
-
+* If filename is a directory then we will watch for all events in that
+* directory. If filename is a file - we will only get events from that
+* file. Subdirectories are not watched.
+*/
 UV_EXTERN int uv_fs_event_init(uv_loop_t* loop, uv_fs_event_t* handle,
-    const char* filename, uv_fs_event_cb cb, int flags);
+    const char* filename, uv_fs_event_cb cb);
 
 /* Utility */
 
@@ -1286,6 +1266,8 @@ struct uv_loop_s {
   uv_async_t uv_eio_want_poll_notifier;
   uv_async_t uv_eio_done_poll_notifier;
   uv_idle_t uv_eio_poller;
+  /* Poll result queue */
+  eio_channel uv_eio_channel;
   /* Diagnostic counters */
   uv_counters_t counters;
   /* The last error */
